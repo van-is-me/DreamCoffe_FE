@@ -52,8 +52,8 @@ export default class APIs {
         return instance.get(`/api/product/getByCategory?categoryId=${id}`) 
     }
 
-    static createMomoPayment(data) {
-        return instance.post('/api/payment/create', data)
+    static createPayment(gateway, data) {
+        return instance.post(`/api/payment/create?gateway=${gateway}`, data);
     }
 
 }

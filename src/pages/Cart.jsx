@@ -3,11 +3,11 @@ import { getCart, saveCart } from "../utils/cart";
 import { TrashIcon } from "@heroicons/react/solid";
 import noti from "../common/noti";
 import { useNavigate } from "react-router-dom";
+import APIs from "../APIs";
 
 function Cart() {
   const [cart, setCart] = useState([]);
   const navigate = useNavigate();
-
   // Lấy giỏ hàng khi component mount hoặc khi cart được cập nhật
   useEffect(() => {
     const syncCart = () => setCart(getCart());
@@ -46,10 +46,37 @@ function Cart() {
 
   const handleClearCart = () => {
     updateCartAndNotify([], "Đã xoá toàn bộ giỏ hàng!");
+    navigate("/"); // Chuyển về trang chủ sau khi xoá giỏ hàng
   };
 
-  const handlePayment = () => {
-    navigate("/payment-momo");
+  const handlePayment = async () => {
+    try {
+      const totalPrice = cart.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+
+      const data = {
+        amount: totalPrice,
+        orderInfo: "Thanh toán đơn hàng tại cửa hàng XYZ",
+      };
+
+      const response = await APIs.createPayment("momo", data);
+      const payData = JSON.parse(response.data.qrCodeUrl);
+
+      if (payData?.payUrl) {
+        window.location.href = payData.payUrl;
+
+        // 🚫 CHÚ Ý: Đoạn này sẽ không chạy sau khi redirect.
+        // ✅ Nếu bạn muốn quay lại home sau khi giao dịch hoàn tất:
+        // ➤ Phải dùng returnUrl (callback URL) của hệ thống bạn.
+      } else {
+        throw new Error("Không lấy được URL thanh toán từ phản hồi.");
+      }
+    } catch (error) {
+      console.error("Lỗi thanh toán:", error);
+      noti.error("Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại.");
+    }
   };
 
   const totalPrice = cart.reduce(
